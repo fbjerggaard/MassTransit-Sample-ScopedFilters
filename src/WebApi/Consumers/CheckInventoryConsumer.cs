@@ -1,3 +1,6 @@
+using MediatR;
+using WebApi.Handlers;
+
 namespace WebApi.Consumers
 {
     using System;
@@ -10,21 +13,30 @@ namespace WebApi.Consumers
         IConsumer<CheckInventory>
     {
         readonly Token _token;
+        private readonly IMediator _mediator;
 
-        public CheckInventoryConsumer(Token token)
+        public CheckInventoryConsumer(Token token, IMediator mediator)
         {
             _token = token;
+            _mediator = mediator;
         }
 
-        public Task Consume(ConsumeContext<CheckInventory> context)
+        public async Task Consume(ConsumeContext<CheckInventory> context)
         {
             if (string.IsNullOrWhiteSpace(_token.Value))
                 throw new InvalidOperationException("The security token was not found");
 
-            return context.RespondAsync(new InventoryStatus
+            var cmd = new CheckInventoryCommand()
             {
-                Sku = context.Message.Sku,
-                QuantityOnHand = new Random().Next(100)
+                Sku = context.Message.Sku
+            };
+
+            var result = await _mediator.Send(cmd);
+
+            await context.RespondAsync(new InventoryStatus
+            {
+                Sku = result.Sku,
+                QuantityOnHand = result.QuantityOnHand
             });
         }
     }

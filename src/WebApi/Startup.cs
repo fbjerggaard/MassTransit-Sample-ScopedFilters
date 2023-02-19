@@ -23,8 +23,16 @@ namespace WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssemblyContaining<Startup>();
+                cfg.Lifetime = ServiceLifetime.Scoped;
+            });
+
+
             services.AddMassTransit(x =>
             {
+                x.AddConsumer<InventoryStatusRequestedConsumer>();
                 x.AddConsumer<CheckInventoryConsumer>();
 
                 x.UsingInMemory((context, cfg) =>
@@ -39,10 +47,7 @@ namespace WebApi
 
             services.AddScoped<Token>();
             services.AddScoped<TokenActionFilter>();
-            services.AddControllers(options =>
-            {
-                options.Filters.Add(typeof(TokenActionFilter));
-            });
+            services.AddControllers(options => { options.Filters.Add(typeof(TokenActionFilter)); });
 
             services.AddSwaggerGen(c =>
             {
@@ -70,10 +75,7 @@ namespace WebApi
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }
